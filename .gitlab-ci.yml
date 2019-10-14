@@ -1,0 +1,63 @@
+#image: pypy:latest
+image: registry.gitlab.com/kolanich-subgroups/docker-images/fixed_python:latest
+stages:
+  - dependencies
+  - build
+  - test
+  - trigger
+
+variables:
+  DOCKER_DRIVER: overlay2
+  SAST_ANALYZER_IMAGE_TAG: latest
+  SAST_DISABLE_DIND: "true"
+  SAST_CONFIDENCE_LEVEL: 5
+  CODECLIMATE_VERSION: latest
+
+include:
+  - template: SAST.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
+
+build:
+  tags:
+    - shared
+  stage: build
+  variables:
+    GIT_DEPTH: "1"
+    PYTHONUSERBASE: ${CI_PROJECT_DIR}/python_user_packages
+
+  before_script:
+    - export PYTHON_MODULES_DIR=${PYTHONUSERBASE}/lib/python3.8
+    - export EXECUTABLE_DEPENDENCIES_DIR=${PYTHONUSERBASE}/bin
+    - export PATH="$PATH:$EXECUTABLE_DEPENDENCIES_DIR" # don't move into `variables` any of them, it is unordered
+
+  script:
+    - mkdir ./wheels
+    - python3 ./setup.py bdist_wheel
+    - mv ./dist/*.whl ./wheels/CMake-0.CI_python-py3-none-any.whl
+    - pip3 install --upgrade --pre --user ./wheels/CMake-0.CI_python-py3-none-any.whl
+    - coverage run --source=CMake --branch -m pytest --junitxml=./rspec.xml ./tests/tests.py
+    - coverage report -m
+    - coverage xml
+
+  coverage: /^TOTAL\\s+.+?(\\d{1,3}%)$/
+
+  cache:
+    paths:
+      - $PYTHONUSERBASE
+
+  artifacts:
+    paths:
+      - wheels
+    reports:
+      junit: ./rspec.xml
+      cobertura: ./coverage.xml
+
+
+update_prebuilder_dependencies_image:
+  only:
+    - master
+  stage: trigger
+  allow_failure: true
+  trigger:
+    project: KOLANICH-subgroups/docker-images/prebuilder_dependencies
+    strategy: depend

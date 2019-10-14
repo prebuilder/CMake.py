@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.2.0", "wheel", "setuptools_scm[toml]>=3.4.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "CMake"
+authors = [{name = "KOLANICH"}]
+description = "A dumb and incomplete implementation of CMake interpreter in python"
+readme = "ReadMe.md"
+keywords = ["cmake", "build"]
+license = {text = "Unlicense"}
+classifiers = [
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Development Status :: 4 - Beta",
+	"Environment :: Other Environment",
+	"Intended Audience :: Developers",
+	"License :: Public Domain",
+	"Operating System :: OS Independent",
+	"Topic :: Software Development :: Libraries :: Python Modules",
+]
+urls = {Homepage = "https://github.com/KOLANICH/CMake.py"}
+requires-python = ">=3.4"
+dependencies = ["cmakeast @ git+https://github.com/polysquare/cmake-ast.git"]
+dynamic = ["version"]
+
+[tool.setuptools]
+zip-safe = true
+py-modules = ["CMake"]
+
+[tool.setuptools_scm]
